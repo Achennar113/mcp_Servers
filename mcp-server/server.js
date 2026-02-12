@@ -79,3 +79,54 @@ app.get("/mcp/stream", verifyToken, async (req, res) => {
 app.listen(process.env.PORT, () => {
   console.log(`🚀 MCP Server running on ${process.env.PORT}`);
 });
+
+
+app.post("/mcp/tool", verifyToken, async (req, res) => {
+  const db = getDB();
+
+  const { tool, collection, filter, data } = req.body;
+
+  try {
+    let result;
+
+    switch (tool) {
+
+      case "find":
+        result = await db.collection(collection)
+          .find(filter || {})
+          .toArray();
+        break;
+
+      case "count":
+        result = await db.collection(collection)
+          .countDocuments(filter || {});
+        break;
+
+      case "insert":
+        result = await db.collection(collection)
+          .insertOne(data);
+        break;
+
+      case "createCollection":
+        result = await db.createCollection(collection);
+        break;
+
+      case "dropCollection":
+        result = await db.collection(collection).drop();
+        break;
+
+      case "delete":
+        result = await db.collection(collection)
+          .deleteMany(filter || {});
+        break;
+
+      default:
+        return res.status(400).json({ error: "Unknown tool" });
+    }
+
+    res.json({ success: true, result });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
