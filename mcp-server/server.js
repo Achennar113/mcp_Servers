@@ -83,7 +83,6 @@ app.listen(process.env.PORT, () => {
 
 app.post("/mcp/tool", verifyToken, async (req, res) => {
   const db = getDB();
-
   const { tool, collection, filter, data } = req.body;
 
   try {
@@ -98,33 +97,41 @@ app.post("/mcp/tool", verifyToken, async (req, res) => {
         break;
 
       case "count":
-        result = await db.collection(collection)
+        const count = await db.collection(collection)
           .countDocuments(filter || {});
+        result = { count };
         break;
 
       case "insert":
-        result = await db.collection(collection)
+        const insertRes = await db.collection(collection)
           .insertOne(data);
+        result = { insertedId: insertRes.insertedId };
         break;
 
       case "createCollection":
-        result = await db.createCollection(collection);
+        await db.createCollection(collection);
+        result = { message: `Collection ${collection} created` };
         break;
 
       case "dropCollection":
-        result = await db.collection(collection).drop();
+        await db.collection(collection).drop();
+        result = { message: `Collection ${collection} dropped` };
         break;
 
       case "delete":
-        result = await db.collection(collection)
+        const delRes = await db.collection(collection)
           .deleteMany(filter || {});
+        result = { deletedCount: delRes.deletedCount };
         break;
 
       default:
         return res.status(400).json({ error: "Unknown tool" });
     }
 
-    res.json({ success: true, result });
+    res.json({
+      success: true,
+      result
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
